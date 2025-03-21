@@ -1,77 +1,209 @@
 'use client';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import Notifications from '../Notifications';
+import { 
+  AppBar, Toolbar, IconButton, Drawer, List, ListItem, ListItemText, 
+  CssBaseline, Box, Typography, Avatar, Stack, alpha, useTheme 
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import SearchIcon from '@mui/icons-material/Search';
+
+const HEADER_MOBILE = 64;
+const HEADER_DESKTOP = 92;
+const NAV_WIDTH = 280;
 
 export default function AdminLayout({ children }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const theme = useTheme();
+
+  const toggleDrawer = useCallback(() => {
+    setIsDrawerOpen(!isDrawerOpen);
+  }, [isDrawerOpen]);
+
+  const renderHeader = (
+    <AppBar
+      sx={{
+        boxShadow: 'none',
+        height: HEADER_MOBILE,
+        zIndex: theme.zIndex.appBar + 1,
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+        bgcolor: alpha(theme.palette.background.default, 0.8),
+        [theme.breakpoints.up('lg')]: {
+          height: HEADER_DESKTOP,
+          width: `calc(100% - ${NAV_WIDTH}px)`,
+          padding: theme.spacing(0, 5),
+        },
+      }}
+    >
+      <Toolbar
+        sx={{
+          height: 1,
+          px: { lg: 5 },
+        }}
+      >
+        <IconButton
+          onClick={toggleDrawer}
+          sx={{
+            mr: 1,
+            color: 'text.primary',
+            display: { lg: 'none' },
+          }}
+        >
+          <MenuIcon />
+        </IconButton>
+
+        <SearchIcon
+          sx={{
+            color: 'text.disabled',
+            width: 20,
+            height: 20,
+          }}
+        />
+
+        <Box sx={{ flexGrow: 1 }} />
+
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={{ xs: 0.5, sm: 1.5 }}
+        >
+          <Notifications />
+          <IconButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            <Avatar 
+              sx={{ 
+                width: 40, 
+                height: 40,
+                bgcolor: 'grey.300',
+              }} 
+            />
+          </IconButton>
+        </Stack>
+      </Toolbar>
+    </AppBar>
+  );
+
+  const renderDrawer = (
+    <Drawer
+      open={isDrawerOpen}
+      onClose={toggleDrawer}
+      variant="permanent"
+      PaperProps={{
+        sx: {
+          width: NAV_WIDTH,
+          bgcolor: 'background.default',
+          borderRightStyle: 'dashed',
+          [theme.breakpoints.up('lg')]: {
+            marginTop: '24px',
+            height: 'calc(100% - 24px)',
+            borderRadius: '16px',
+          },
+        },
+      }}
+      sx={{
+        width: NAV_WIDTH,
+        flexShrink: 0,
+        display: { xs: 'none', lg: 'block' },
+      }}
+    >
+      <Box sx={{ px: 2.5, py: 3, display: 'inline-flex' }}>
+        <Typography variant="h6" noWrap component="div">
+          RTL Admin
+        </Typography>
+      </Box>
+
+      <List sx={{ px: 2 }}>
+        {['Dashboard', 'Symptoms', 'Diseases', 'Cases', 'Users'].map((text) => (
+          <ListItem 
+            key={text} 
+            component={Link} 
+            href={`/dashboard${text.toLowerCase() === 'dashboard' ? '' : `/${text.toLowerCase()}`}`}
+            sx={{
+              borderRadius: 1,
+              mb: 0.5,
+              '&:hover': {
+                bgcolor: 'action.hover',
+                color: 'primary.main',
+              },
+            }}
+          >
+            <ListItemText primary={text} />
+          </ListItem>
+        ))}
+      </List>
+    </Drawer>
+  );
+
+  // Mobile drawer version
+  const renderMobileDrawer = (
+    <Drawer
+      open={isDrawerOpen}
+      onClose={toggleDrawer}
+      variant="temporary"
+      PaperProps={{
+        sx: { width: NAV_WIDTH },
+      }}
+      sx={{
+        display: { xs: 'block', lg: 'none' },
+      }}
+    >
+      {/* Same content as desktop drawer */}
+      <Box sx={{ px: 2.5, py: 3, display: 'inline-flex' }}>
+        <Typography variant="h6" noWrap component="div">
+          RTL Admin
+        </Typography>
+      </Box>
+
+      <List sx={{ px: 2 }}>
+        {['Dashboard', 'Symptoms', 'Diseases', 'Cases', 'Users'].map((text) => (
+          <ListItem 
+            key={text} 
+            button 
+            component={Link} 
+            href={`/dashboard${text.toLowerCase() === 'dashboard' ? '' : `/${text.toLowerCase()}`}`}
+            sx={{
+              borderRadius: 1,
+              mb: 0.5,
+              '&:hover': {
+                bgcolor: 'action.hover',
+                color: 'primary.main',
+              },
+            }}
+          >
+            <ListItemText primary={text} />
+          </ListItem>
+        ))}
+      </List>
+    </Drawer>
+  );
 
   return (
-    <div className="min-h-screen flex flex-row-reverse bg-gray-100">
-      {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg">
-        <div className="flex flex-col h-full">
-          <div className="flex-shrink-0 p-4 bg-blue-600 text-white text-xl font-bold">
-            <Link href="/dashboard">لوحة التحكم الطبية</Link>
-          </div>
-          <div className="flex flex-col py-4">
-            <Link href="/dashboard/symptoms" className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-md text-lg">
-              الأعراض
-            </Link>
-            <Link href="/dashboard/diseases" className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-md text-lg">
-              الأمراض
-            </Link>
-            <Link href="/dashboard/cases" className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-md text-lg">
-              الحالات
-            </Link>
-            <Link href="/dashboard/users" className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-md text-lg">
-              المستخدمين
-            </Link>
-          </div>
-        </div>
-      </div>
+    <Box sx={{ 
+      display: { lg: 'flex' },
+      minHeight: '100%',
+    }}>
+      <CssBaseline />
+      
+      {renderHeader}
+      {renderDrawer}
+      {renderMobileDrawer}
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Topbar */}
-        <nav className="bg-white shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              {/* Notifications and User menu */}
-              <div className="flex items-center space-x-4">
-                <Notifications />
-                <div className="ml-3 relative">
-                  <button
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="max-w-xs bg-white rounded-full flex items-center text-sm focus:outline-none"
-                  >
-                    <span className="sr-only">فتح قائمة المستخدم</span>
-                    <div className="h-8 w-8 rounded-full bg-gray-300"></div>
-                  </button>
-                  {isMenuOpen && (
-                    <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5">
-                      <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        ملفي الشخصي
-                      </Link>
-                      <Link href="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        الإعدادات
-                      </Link>
-                      <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        تسجيل الخروج
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </nav>
-
-        {/* Main Content Section */}
-        <main className=" py-6 sm:px-6 lg:px-8">
-          {children}
-        </main>
-      </div>
-    </div>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          mt: { xs: 10, lg: 20 },
+          // py: { xs: 10, lg: 10},
+          px: { xs: 2, lg: 5 },
+        }}
+      >
+        {children}
+      </Box>
+    </Box>
   );
 }
