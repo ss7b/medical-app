@@ -22,9 +22,7 @@ const DiseasesPage = () => {
     const [availableCountries, setAvailableCountries] = useState([]); // New state for countries
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            setToken(localStorage.getItem('token') || '');
-        }
+        setToken(localStorage.getItem('token') || '');
     }, []);
 
     useEffect(() => {
@@ -129,10 +127,10 @@ const DiseasesPage = () => {
     };
 
     const handleSymptomToggle = (symptomId) => {
-        const exists = formData.symptoms.some(symptom => symptom.id === symptomId);
+        const exists = formData.symptoms && formData.symptoms.some(symptom => symptom.id === symptomId);
         const updatedSymptoms = exists 
             ? formData.symptoms.filter(symptom => symptom.id !== symptomId)
-            : [...formData.symptoms, { id: symptomId, points: 0 }];
+            : [...(formData.symptoms || []), { id: symptomId, points: 0 }];
         setFormData({ ...formData, symptoms: updatedSymptoms });
     };
 
@@ -159,8 +157,9 @@ const DiseasesPage = () => {
         setOpen(false);
     };
 
-    const handleMenuOpen = (event) => {
+    const handleMenuOpen = (event, item) => {
         setAnchorEl(event.currentTarget);
+        setEditId(item.id); // Ensure the current item's id is set for editing
     };
 
     const handleMenuClose = () => {
@@ -186,7 +185,7 @@ const DiseasesPage = () => {
                 <Table>
                     <TableHead>
                         <TableRow>
-                            {['name', 'description', 'causes', 'treatments', 'affected_countries'].map(col => <TableCell key={col}>{col}</TableCell>)}
+                            {['الاسم', 'الوصف', 'الأسباب', 'العلاجات', 'الدول المتأثرة'].map(col => <TableCell key={col}>{col}</TableCell>)}
                             <TableCell>الإجراءات</TableCell>
                         </TableRow>
                     </TableHead>
@@ -197,15 +196,15 @@ const DiseasesPage = () => {
                                     <TableCell key={col}>{item[col]}</TableCell>
                                 ))}
                                 <TableCell>
-                                    {item.affected_countries.map(country => country.name).join(', ')}
+                                    {(item.affected_countries || []).map(country => country.name).join(', ')}
                                 </TableCell>
                                 <TableCell>
-                                    <IconButton onClick={handleMenuOpen}>
+                                    <IconButton onClick={(event) => handleMenuOpen(event, item)}>
                                         <MoreVertIcon />
                                     </IconButton>
                                     <Menu
                                         anchorEl={anchorEl}
-                                        open={Boolean(anchorEl)}
+                                        open={Boolean(anchorEl) && editId === item.id} // Ensure menu opens for the correct item
                                         onClose={handleMenuClose}
                                     >
                                         <MenuItem onClick={() => { handleEdit(item); handleMenuClose(); }}>تعديل</MenuItem>
@@ -233,7 +232,7 @@ const DiseasesPage = () => {
                             <TextField
                                 key={col}
                                 name={col}
-                                label={col}
+                                label={col === 'name' ? 'الاسم' : col === 'description' ? 'الوصف' : col === 'causes' ? 'الأسباب' : 'العلاجات'}
                                 value={formData[col] || ''}
                                 onChange={handleChange}
                                 fullWidth
@@ -261,13 +260,13 @@ const DiseasesPage = () => {
                                     <FormControlLabel
                                         control={
                                             <Checkbox
-                                                checked={formData.symptoms.some(s => s.id === symptom.id)}
+                                                checked={!!formData.symptoms && formData.symptoms.some(s => s.id === symptom.id)}
                                                 onChange={() => handleSymptomToggle(symptom.id)}
                                             />
                                         }
                                         label={symptom.name}
                                     />
-                                    {formData.symptoms.some(s => s.id === symptom.id) && (
+                                    {!!formData.symptoms && formData.symptoms.some(s => s.id === symptom.id) && (
                                         <TextField
                                             type="number"
                                             label="النقاط"

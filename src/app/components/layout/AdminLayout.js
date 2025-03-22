@@ -87,97 +87,104 @@ export default function AdminLayout({ children }) {
 
   const renderDrawer = (
     <Drawer
-      open={isDrawerOpen}
-      onClose={toggleDrawer}
-      variant="permanent"
-      PaperProps={{
-        sx: {
-          width: NAV_WIDTH,
-          bgcolor: 'background.default',
-          borderRightStyle: 'dashed',
-          [theme.breakpoints.up('lg')]: {
-            marginTop: '24px',
-            height: 'calc(100% - 24px)',
-            borderRadius: '16px',
-          },
-        },
-      }}
-      sx={{
-        width: NAV_WIDTH,
-        flexShrink: 0,
-        display: { xs: 'none', lg: 'block' },
-      }}
+        anchor="right" // Set the drawer to appear from the right
+        open={isDrawerOpen}
+        onClose={toggleDrawer}
+        variant="permanent"
+        PaperProps={{
+            sx: {
+                width: NAV_WIDTH,
+                bgcolor: 'background.default',
+                borderLeftStyle: 'dashed', // Change border style to left
+                [theme.breakpoints.up('lg')]: {
+                    marginTop: '24px',
+                    height: 'calc(100% - 24px)',
+                    borderRadius: '16px',
+                },
+            },
+        }}
+        sx={{
+            width: NAV_WIDTH,
+            flexShrink: 0,
+            display: { xs: 'none', lg: 'block' },
+        }}
     >
-      <Box sx={{ px: 2.5, py: 3, display: 'inline-flex' }}>
-        <Typography variant="h6" noWrap component="div">
-          RTL Admin
-        </Typography>
-      </Box>
+        <Box sx={{ px: 2.5, py: 3, display: 'inline-flex' }}>
+            <Typography variant="h6" noWrap component="div">
+                RTL Admin
+            </Typography>
+        </Box>
 
-      <List sx={{ px: 2 }}>
-        {['Dashboard', 'Symptoms', 'Diseases', 'Cases', 'Users'].map((text) => (
-          <ListItem 
-            key={text} 
-            component={Link} 
-            href={`/dashboard${text.toLowerCase() === 'dashboard' ? '' : `/${text.toLowerCase()}`}`}
-            sx={{
-              borderRadius: 1,
-              mb: 0.5,
-              '&:hover': {
-                bgcolor: 'action.hover',
-                color: 'primary.main',
-              },
-            }}
-          >
-            <ListItemText primary={text} />
-          </ListItem>
-        ))}
-      </List>
+        <List sx={{ px: 2 }}>
+            {['Dashboard', 'Symptoms', 'Diseases', 'Cases', 'Users'].map((text) => (
+                <ListItem 
+                    key={text} 
+                    component={Link} 
+                    href={`/dashboard${text.toLowerCase() === 'dashboard' ? '' : `/${text.toLowerCase()}`}`}
+                    sx={{
+                        borderRadius: 1,
+                        mb: 0.5,
+                        '&:hover': {
+                            bgcolor: 'action.hover',
+                            color: 'primary.main',
+                        },
+                    }}
+                >
+                    <ListItemText primary={text} />
+                </ListItem>
+            ))}
+        </List>
     </Drawer>
-  );
+);
 
-  // Mobile drawer version
-  const renderMobileDrawer = (
+// Mobile drawer version
+const renderMobileDrawer = (
     <Drawer
-      open={isDrawerOpen}
-      onClose={toggleDrawer}
-      variant="temporary"
-      PaperProps={{
-        sx: { width: NAV_WIDTH },
-      }}
-      sx={{
-        display: { xs: 'block', lg: 'none' },
-      }}
+        anchor="right" // Set the mobile drawer to appear from the right
+        open={isDrawerOpen}
+        onClose={toggleDrawer}
+        variant="temporary"
+        PaperProps={{
+            sx: { width: NAV_WIDTH },
+        }}
+        sx={{
+            display: { xs: 'block', lg: 'none' },
+        }}
     >
-      {/* Same content as desktop drawer */}
-      <Box sx={{ px: 2.5, py: 3, display: 'inline-flex' }}>
-        <Typography variant="h6" noWrap component="div">
-          RTL Admin
-        </Typography>
-      </Box>
+        {/* Same content as desktop drawer */}
+        <Box sx={{ px: 2.5, py: 3, display: 'inline-flex' }}>
+            <Typography variant="h6" noWrap component="div">
+                MEDEDASH
+            </Typography>
+        </Box>
 
-      <List sx={{ px: 2 }}>
-        {['Dashboard', 'Symptoms', 'Diseases', 'Cases', 'Users'].map((text) => (
-          <ListItem 
-            key={text} 
-            button 
-            component={Link} 
-            href={`/dashboard${text.toLowerCase() === 'dashboard' ? '' : `/${text.toLowerCase()}`}`}
-            sx={{
-              borderRadius: 1,
-              mb: 0.5,
-              '&:hover': {
-                bgcolor: 'action.hover',
-                color: 'primary.main',
-              },
-            }}
-          >
-            <ListItemText primary={text} />
-          </ListItem>
-        ))}
-      </List>
+        <List sx={{ px: 2 }}>
+            {[
+                { text: 'لوحة القيادة', link: 'dashboard' },
+                { text: 'الأعراض', link: 'symptoms' },
+                { text: 'الأمراض', link: 'diseases' },
+                { text: 'الحالات', link: 'cases' },
+                { text: 'المستخدمين', link: 'users' }
+            ].map(({ text, link }) => (
+                <ListItem 
+                    key={link} 
+                    component={Link} 
+                    href={`/dashboard${link === 'dashboard' ? '' : `/${link}`}`}
+                    sx={{
+                        borderRadius: 1,
+                        mb: 0.5,
+                        '&:hover': {
+                            bgcolor: 'action.hover',
+                            color: 'primary.main',
+                        },
+                    }}
+                >
+                    <ListItemText primary={text} sx={{ textAlign: 'right' }} />
+                </ListItem>
+            ))}
+        </List>
     </Drawer>
-  );
+);
 
   return (
     <Box sx={{ 

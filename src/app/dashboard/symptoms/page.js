@@ -9,7 +9,7 @@ import url from '@/conf';
 
 const SymptomPage = () => {
     const [data, setData] = useState([]);
-    const [formData, setFormData] = useState({ name: '', description: '', severity: '' });
+    const [formData, setFormData] = useState({ name: '', description: '' }); // Removed severity
     const [isEditing, setIsEditing] = useState(false);
     const [editId, setEditId] = useState(null);
     const [page, setPage] = useState(0);
@@ -52,7 +52,7 @@ const SymptomPage = () => {
                 });
                 toast.success("تمت إضافة البيانات بنجاح.");
             }
-            setFormData({ name: '', description: '', severity: '' });
+            setFormData({ name: '', description: '' }); // Removed severity
             setIsEditing(false);
             setEditId(null);
             fetchData();
@@ -62,23 +62,30 @@ const SymptomPage = () => {
         }
     };
 
+    const handleEdit = async (item) => {
+        try {
+            const response = await axios.get(`${link}/${item.id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setFormData(response.data); // Set formData with the fetched data
+            setIsEditing(true);
+            setEditId(item.id); // Ensure item.id is defined
+            setOpen(true);
+        } catch (error) {
+            toast.error("خطأ في جلب البيانات للتعديل.");
+        }
+    };
+
     const handleDelete = async (id) => {
         try {
             await axios.delete(`${link}/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success("تم الحذف بنجاح.");
-            fetchData();
+            fetchData(); // Refresh data after deletion
         } catch (error) {
             toast.error("خطأ أثناء الحذف.");
         }
-    };
-
-    const handleEdit = (item) => {
-        setFormData(item);
-        setIsEditing(true);
-        setEditId(item.id);
-        setOpen(true);
     };
 
     const handleChange = (e) => {
@@ -108,8 +115,9 @@ const SymptomPage = () => {
         setOpen(false);
     };
 
-    const handleMenuOpen = (event) => {
+    const handleMenuOpen = (event, item) => {
         setAnchorEl(event.currentTarget);
+        setEditId(item.id); // Ensure the current item's id is set for editing
     };
 
     const handleMenuClose = () => {
@@ -123,7 +131,10 @@ const SymptomPage = () => {
     }, [token]);
 
     const filteredData = data.filter(item =>
-        ['name', 'description', 'severity'].some(col => item[col].toString().toLowerCase().includes(searchTerm.toLowerCase()))
+        ['name', 'description'].some(col => { // Removed severity
+            const value = item[col];
+            return value && value.toString().toLowerCase().includes(searchTerm.toLowerCase());
+        })
     );
 
     return (
@@ -141,27 +152,27 @@ const SymptomPage = () => {
                 <Table>
                     <TableHead>
                         <TableRow>
-                            {['name', 'description', 'severity'].map(col => <TableCell key={col}>{col}</TableCell>)}
+                            <TableCell>الاسم</TableCell>
+                            <TableCell>الوصف</TableCell>
                             <TableCell>الإجراءات</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(item => (
                             <TableRow key={item.id}>
-                                {['name', 'description', 'severity'].map(col => (
-                                    <TableCell key={col}>{item[col]}</TableCell>
-                                ))}
+                                <TableCell>{item.name}</TableCell>
+                                <TableCell>{item.description}</TableCell>
                                 <TableCell>
-                                    <IconButton onClick={handleMenuOpen}>
+                                    <IconButton onClick={(event) => handleMenuOpen(event, item)}>
                                         <MoreVertIcon />
                                     </IconButton>
                                     <Menu
                                         anchorEl={anchorEl}
-                                        open={Boolean(anchorEl)}
+                                        open={Boolean(anchorEl) && editId === item.id} // Ensure menu opens for the correct item
                                         onClose={handleMenuClose}
                                     >
                                         <MenuItem onClick={() => { handleEdit(item); handleMenuClose(); }}>تعديل</MenuItem>
-                                        <MenuItem onClick={() => { handleDelete(item.id); handleMenuClose(); }}>حذف</MenuItem>
+                                        <MenuItem onClick={() => { handleDelete(item.id); handleMenuClose(); }}>حذف </MenuItem>
                                     </Menu>
                                 </TableCell>
                             </TableRow>
@@ -181,7 +192,7 @@ const SymptomPage = () => {
                 <DialogTitle>{isEditing ? 'تعديل البيانات' : 'إضافة بيانات جديدة'}</DialogTitle>
                 <DialogContent>
                     <form onSubmit={handleSubmit}>
-                        {['name', 'description', 'severity'].map((col) => (
+                        {['name', 'description'].map((col) => ( // Removed severity
                             <TextField
                                 key={col}
                                 name={col}
@@ -196,7 +207,11 @@ const SymptomPage = () => {
                         ))}
                         <DialogActions>
                             <Button onClick={handleClose}>إغلاق</Button>
-                            <Button type="submit">{isEditing ? 'تعديل' : 'إضافة'}</Button>
+                            <Button
+                                type="submit"
+                            >
+                                {isEditing ? 'تعديل' : 'إضافة'}
+                            </Button>
                         </DialogActions>
                     </form>
                 </DialogContent>
