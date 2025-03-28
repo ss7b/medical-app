@@ -9,7 +9,17 @@ import url from '@/conf';
 
 const DiseasesPage = () => {
     const [data, setData] = useState([]);
-    const [formData, setFormData] = useState({ name: '', description: '', causes: '', treatments: '', affected_countries: [], symptoms: [] });
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        causes: '',
+        treatments: '',
+        affected_countries: [],
+        symptoms: [],
+        low_range: '',
+        medium_range: '',
+        high_range: ''
+    });
     const [isEditing, setIsEditing] = useState(false);
     const [editId, setEditId] = useState(null);
     const [page, setPage] = useState(0);
@@ -72,7 +82,6 @@ const DiseasesPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Form Data:', formData); // Debugging line
         try {
             if (isEditing) {
                 await axios.put(`${link}/${editId}`, formData, {
@@ -85,13 +94,23 @@ const DiseasesPage = () => {
                 });
                 toast.success("تمت إضافة البيانات بنجاح.");
             }
-            setFormData({ name: '', description: '', causes: '', treatments: '', affected_countries: [], symptoms: [] });
+            setFormData({
+                name: '',
+                description: '',
+                causes: '',
+                treatments: '',
+                affected_countries: [],
+                symptoms: [],
+                low_range: '',
+                medium_range: '',
+                high_range: ''
+            });
             setIsEditing(false);
             setEditId(null);
             fetchData();
             handleClose();
         } catch (error) {
-            console.error("Error:", error); // Debugging line
+            console.error("Error:", error);
             toast.error("خطأ أثناء حفظ البيانات.");
         }
     };
@@ -119,9 +138,9 @@ const DiseasesPage = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSymptomChange = (symptomId, points) => {
+    const handleSymptomChange = (symptomId, field, value) => {
         const updatedSymptoms = formData.symptoms.map(symptom => 
-            symptom.id === symptomId ? { ...symptom, points } : symptom
+            symptom.id === symptomId ? { ...symptom, [field]: value } : symptom
         );
         setFormData({ ...formData, symptoms: updatedSymptoms });
     };
@@ -228,17 +247,15 @@ const DiseasesPage = () => {
                 <DialogTitle>{isEditing ? 'تعديل البيانات' : 'إضافة بيانات جديدة'}</DialogTitle>
                 <DialogContent>
                     <form onSubmit={handleSubmit}>
-                        {['name', 'description', 'causes', 'treatments'].map((col) => (
+                        {['name', 'description', 'causes', 'treatments', 'low_range', 'medium_range', 'high_range'].map((col) => (
                             <TextField
                                 key={col}
                                 name={col}
-                                label={col === 'name' ? 'الاسم' : col === 'description' ? 'الوصف' : col === 'causes' ? 'الأسباب' : 'العلاجات'}
+                                label={col === 'name' ? 'الاسم' : col === 'description' ? 'نوع العزل' : col === 'causes' ? 'خطوات التعامل مع الحالة' : col === 'treatments' ? 'الاحتياطات' : col === 'low_range' ? 'نطاق منخفض' : col === 'medium_range' ? 'نطاق متوسط' : 'نطاق عالي'}
                                 value={formData[col] || ''}
                                 onChange={handleChange}
                                 fullWidth
                                 margin="dense"
-                                multiline={col === 'description' || col === 'causes' || col === 'treatments'}
-                                rows={col === 'description' || col === 'causes' || col === 'treatments' ? 4 : 1}
                             />
                         ))}
                         <Autocomplete
@@ -271,7 +288,7 @@ const DiseasesPage = () => {
                                             type="number"
                                             label="النقاط"
                                             value={formData.symptoms.find(s => s.id === symptom.id).points}
-                                            onChange={(e) => handleSymptomChange(symptom.id, e.target.value)}
+                                            onChange={(e) => handleSymptomChange(symptom.id, 'points', e.target.value)}
                                             margin="dense"
                                         />
                                     )}

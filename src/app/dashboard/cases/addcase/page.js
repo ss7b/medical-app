@@ -1,32 +1,34 @@
-"use client"
-import React, { useState, useEffect } from 'react';
-import AdminLayout from '@/app/components/layout/AdminLayout';
-import axios from 'axios';
-import { toast, Toaster } from 'react-hot-toast';
-import { Button, TextField, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, InputLabel, Select, MenuItem, Checkbox, FormControlLabel, FormGroup } from '@mui/material';
-import url from '@/conf';
+"use client";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import AdminLayout from "@/app/components/layout/AdminLayout";
+import axios from "axios";
+import { toast, Toaster } from "react-hot-toast";
+import { Button, TextField, FormControl, InputLabel, Select, MenuItem, Grid } from "@mui/material";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import url from "@/conf";
 
 const SubmitCasePage = () => {
+    const router = useRouter();
     const [formData, setFormData] = useState({
-        patient_name: '',
+        patient_name: "",
         symptoms: [],
-        identity_type: '',
-        nationality: '',
-        birth_date: '',
-        gender: '',
-        visit_type: '',
-        location: '',
-        doctor_id: ''
+        identity_type: "",
+        nationality: "",
+        birth_date: "",
+        gender: "",
+        visit_type: "",
+        location: "",
     });
+
     const [symptomsList, setSymptomsList] = useState([]);
-    const [doctorsList, setDoctorsList] = useState([]);
-    const [resultDialogOpen, setResultDialogOpen] = useState(false);
-    const [analysisResult, setAnalysisResult] = useState(null);
-    const [token, setToken] = useState('');
+    const [filteredSymptoms, setFilteredSymptoms] = useState([]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [token, setToken] = useState("");
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            setToken(localStorage.getItem('token') || '');
+        if (typeof window !== "undefined") {
+            setToken(localStorage.getItem("token") || "");
         }
     }, []);
 
@@ -39,47 +41,33 @@ const SubmitCasePage = () => {
     const fetchSymptoms = async () => {
         try {
             const response = await axios.get(`${url}symptoms`, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` },
             });
             setSymptomsList(response.data);
+            setFilteredSymptoms(response.data);
         } catch (error) {
             toast.error("خطأ في جلب الأعراض.");
         }
     };
 
-    const fetchDoctors = async () => {
-        try {
-            const response = await axios.get(`${url}users?role=doctor`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setDoctorsList(response.data);
-        } catch (error) {
-            toast.error("خطأ في جلب الأطباء.");
-        }
-    };
-
     const handleAnalyzeSymptoms = async () => {
         try {
-            const response = await axios.post(`${url}analyze-symptoms`, { symptoms: formData.symptoms }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setAnalysisResult(response.data.disease_analysis);
-            setResultDialogOpen(true);
-            fetchDoctors();
+            const response = await axios.post(
+                `${url}analyze-symptoms`,
+                { symptoms: formData.symptoms },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            const filteredResults = response.data.disease_analysis.filter(result =>
+                ["Medium", "High"].includes(result.probability)
+            );
+
+            localStorage.setItem("formData", JSON.stringify(formData));
+            localStorage.setItem("analysisResult", JSON.stringify(filteredResults));
+
+            router.push("/dashboard/cases/result");
         } catch (error) {
             toast.error("خطأ أثناء تحليل الأعراض.");
-        }
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            await axios.post(`${url}patient-cases`, formData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success("تم حفظ الحالة بنجاح.");
-        } catch (error) {
-            toast.error("خطأ أثناء حفظ الحالة.");
         }
     };
 
@@ -87,34 +75,37 @@ const SubmitCasePage = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSymptomChange = (e) => {
-        const { value, checked } = e.target;
-        const symptomId = parseInt(value);
-
-        setFormData((prevState) => ({
-            ...prevState,
-            symptoms: checked
-                ? [...prevState.symptoms, symptomId]
-                : prevState.symptoms.filter((symptom) => symptom !== symptomId)
-        }));
+    const handleSearch = (e) => {
+        const term = e.target.value.toLowerCase();
+        setSearchTerm(term);
+        setFilteredSymptoms(symptomsList.filter(symptom => symptom.name.toLowerCase().includes(term)));
     };
 
-    const handleDialogClose = () => {
-        setResultDialogOpen(false);
+    const handleDragEnd = (result) => {
+        if (!result.destination) return;
+
+        const reorderedSymptoms = Array.from(filteredSymptoms);
+        const [movedItem] = reorderedSymptoms.splice(result.source.index, 1);
+        reorderedSymptoms.splice(result.destination.index, 0, movedItem);
+
+        setFilteredSymptoms(reorderedSymptoms);
+    };
+
+    const handleSymptomSelect = (symptomId) => {
+        setFormData((prevState) => ({
+            ...prevState,
+            symptoms: prevState.symptoms.includes(symptomId)
+                ? prevState.symptoms.filter((id) => id !== symptomId)
+                : [...prevState.symptoms, symptomId],
+        }));
     };
 
     return (
         <AdminLayout>
             <Toaster />
-            <form onSubmit={handleSubmit}>
-                <TextField
-                    name="patient_name"
-                    label="اسم المريض"
-                    value={formData.patient_name}
-                    onChange={handleChange}
-                    fullWidth
-                    margin="dense"
-                />
+            <form>
+                <TextField name="patient_name" label="اسم المريض" value={formData.patient_name} onChange={handleChange} fullWidth margin="dense" />
+                
                 <FormControl fullWidth margin="dense">
                     <InputLabel>نوع الهوية</InputLabel>
                     <Select name="identity_type" value={formData.identity_type} onChange={handleChange}>
@@ -124,24 +115,11 @@ const SubmitCasePage = () => {
                         <MenuItem value="تأشيرة">تأشيرة</MenuItem>
                     </Select>
                 </FormControl>
-                <TextField
-                    name="nationality"
-                    label="الجنسية"
-                    value={formData.nationality}
-                    onChange={handleChange}
-                    fullWidth
-                    margin="dense"
-                />
-                <TextField
-                    name="birth_date"
-                    label="تاريخ الميلاد"
-                    type="date"
-                    value={formData.birth_date}
-                    onChange={handleChange}
-                    fullWidth
-                    margin="dense"
-                    InputLabelProps={{ shrink: true }}
-                />
+
+                <TextField name="nationality" label="الجنسية" value={formData.nationality} onChange={handleChange} fullWidth margin="dense" />
+
+                <TextField name="birth_date" label="تاريخ الميلاد" type="date" value={formData.birth_date} onChange={handleChange} fullWidth margin="dense" InputLabelProps={{ shrink: true }} />
+
                 <FormControl fullWidth margin="dense">
                     <InputLabel>الجنس</InputLabel>
                     <Select name="gender" value={formData.gender} onChange={handleChange}>
@@ -170,51 +148,43 @@ const SubmitCasePage = () => {
                     </Select>
                 </FormControl>
 
-                
+                <TextField label="بحث عن الأعراض" variant="outlined" fullWidth margin="dense" value={searchTerm} onChange={handleSearch} />
 
-                <FormGroup>
-                    {symptomsList.map((symptom) => (
-                        <FormControlLabel
-                            key={symptom.id}
-                            control={
-                                <Checkbox
-                                    value={symptom.id}
-                                    checked={formData.symptoms.includes(symptom.id)}
-                                    onChange={handleSymptomChange}
-                                />
-                            }
-                            label={symptom.name}
-                        />
-                    ))}
-                </FormGroup>
+                <DragDropContext onDragEnd={handleDragEnd}>
+                    <Droppable droppableId="symptoms-list">
+                        {(provided) => (
+                            <Grid container spacing={2} {...provided.droppableProps} ref={provided.innerRef}>
+                                {filteredSymptoms.map((symptom, index) => (
+                                    <Draggable key={symptom.id} draggableId={symptom.id.toString()} index={index}>
+                                        {(provided) => (
+                                            <Grid
+                                                item
+                                                xs={6} sm={6} md={4}
+                                                ref={provided.innerRef}
+                                                {...provided.draggableProps}
+                                                {...provided.dragHandleProps}
+                                            >
+                                                <Button
+                                                    variant={formData.symptoms.includes(symptom.id) ? "contained" : "outlined"}
+                                                    fullWidth
+                                                    onClick={() => handleSymptomSelect(symptom.id)}
+                                                >
+                                                    {symptom.name}
+                                                </Button>
+                                            </Grid>
+                                        )}
+                                    </Draggable>
+                                ))}
+                                {provided.placeholder}
+                            </Grid>
+                        )}
+                    </Droppable>
+                </DragDropContext>
 
-                <Button onClick={handleAnalyzeSymptoms}>تحليل الأعراض</Button>
+                <Button variant="contained" color="primary" fullWidth onClick={handleAnalyzeSymptoms} sx={{ marginTop: 2 }}>
+                    تحليل الأعراض
+                </Button>
             </form>
-            <Dialog open={resultDialogOpen} onClose={handleDialogClose}>
-                <DialogTitle>نتيجة التحليل</DialogTitle>
-                <DialogContent>
-                    {analysisResult && analysisResult.map((result, index) => (
-                        <div key={index}>
-                            <p>المرض: {result.disease.name}</p>
-                            <p>النقاط: {result.total_points}</p>
-                            <p>الاحتمالية: {result.probability}</p>
-                        </div>
-                    ))}
-                    <FormControl fullWidth margin="dense">
-                    <InputLabel>اختر الطبيب</InputLabel>
-                    <Select name="doctor_id" value={formData.doctor_id} onChange={handleChange}>
-                        {doctorsList.map((doctor) => (
-                            <MenuItem key={doctor.id} value={doctor.id}>{doctor.name}</MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleDialogClose}>إغلاق</Button>
-                    <Button type="submit">حفظ الحالة</Button>
-
-                </DialogActions>
-            </Dialog>
         </AdminLayout>
     );
 };
