@@ -23,14 +23,25 @@ import Link from "next/link";
 
 const ResultPage = () => {
   const router = useRouter();
-  const formData = JSON.parse(localStorage.getItem("formData"));
-  const analysisResult = JSON.parse(localStorage.getItem("analysisResult"));
-  const [token, setToken] = useState('');
+  const [formData, setFormData] = useState({
+    patient_name: "",
+    symptoms: [],
+    identity_type: "",
+    nationality: "",
+    birth_date: "",
+    gender: "",
+    visit_type: "",
+    location: "",
+    });
+    const [analysisResult, setAnalysisResult] = useState([]);
+  const [token, setToken] = useState({});
   console.log(formData);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
             setToken(localStorage.getItem('token') || '');
+            setFormData(JSON.parse(localStorage.getItem("formData")));
+            setAnalysisResult(JSON.parse(localStorage.getItem("analysisResult")));
         }
     }, []);
 
